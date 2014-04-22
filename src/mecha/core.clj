@@ -1,13 +1,15 @@
 (ns mecha.core
-  (:require [clojure.set :refer [map-invert]]))
+  (:require [clojure.set :refer [map-invert]]
+            [clojure.walk :refer [postwalk]]))
 
 
 (defrecord Mecha [])
 
 
 (defn symbols-from-bindings [bs]
-  (let [lhs (take-nth 2 bs)
-        symbols (flatten lhs)]
+  (let [symbols (take-nth 2 bs)
+        symbols (postwalk #(if (map? %) (keys %) %) symbols)
+        symbols (flatten symbols)]
     symbols))
 
 

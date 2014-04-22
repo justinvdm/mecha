@@ -45,12 +45,16 @@
 
   (it "should handle state as a `let` would"
     (let [starter (stub :starter)
-          m (mecha (:start [foo 1
-                            foo (inc foo)]
-                           (starter foo)))]
-      (m)
+          mdef (mecha (:start [foo 1
+                               foo (inc foo)
+
+                               {bar :bar} {:bar 3}]
+                              (starter foo bar)))
+          m (mdef)]
       (should-have-invoked :starter {:times 1
-                                     :with [2]}))))
+                                     :with [2 3]})
+      (should= 2 (:foo m))
+      (should= 3 (:bar m)))))
 
 
 (describe "defmecha"
