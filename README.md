@@ -9,8 +9,8 @@ coordinate starting and stopping things in clojure
 
 (defmecha foo [foo-name]
   (:start [foo-name (str foo-name "-foo")]
-          (println foo-name " starting"))
-  (:stop (println foo-name " stopping")))
+          (println foo-name "starting"))
+  (:stop (println foo-name "stopping")))
 
 
 (defmecha bar
@@ -25,13 +25,13 @@ coordinate starting and stopping things in clojure
 
 
 (let [s (sys)]
-  ; sys-foo  starting
-  ; bar-foo  starting
+  ; sys-foo starting
+  ; bar-foo starting
   ; bar starting
 
   (stop s)
-  ; bar-foo  stopping
-  ; sys-foo  stopping
+  ; bar-foo stopping
+  ; sys-foo stopping
   ())
 ```
 
