@@ -7,10 +7,18 @@
 
 
 (defn symbols-from-bindings [bs]
-  (let [symbols (take-nth 2 bs)
-        symbols (postwalk #(if (map? %) (keys %) %) symbols)
-        symbols (flatten symbols)]
-    symbols))
+  (let [result (take-nth 2 bs)
+        result (postwalk #(if (map? %) (keys %) %) result)
+        result (flatten result)]
+    result))
+
+
+(defn bindings-to-map [bs]
+  (let [lhs (take-nth 2 bs)
+        rhs (take-nth 2 (rest bs))
+        result (map vector lhs rhs)
+        result (into {} result)]
+    result))
 
 
 (defn symbols-to-map [symbols]
@@ -23,32 +31,31 @@
 (defmacro mecha
   "Make a mecha capable of being started and stopped"
   [& m-body]
-  (let [[m-args m-body]
-        (if (-> m-body first vector?)
-          [(first m-body) (rest m-body)]
-          [[] m-body])
+  (let [[m-args m-body] (if (-> m-body first vector?)
+                          [(first m-body) (rest m-body)]
+                          [[] m-body])
 
-        m-body
-        (for [body m-body] [(first body) (rest body)])
+        m-body (for [body m-body] [(first body) (rest body)])
+        m-body (into {} m-body)
 
-        m-body
-        (into {} m-body)
+        m-start-body (or (:start m-body) ())
+        [m-bindings m-start-body] (if (-> m-start-body first vector?)
+                                    [(first m-start-body) (rest m-start-body)]
+                                    [[] m-start-body])
+        m-stop-body (or (:stop m-body) ())
 
-        m-start-body
-        (or (:start m-body) ())
+        [m-args m-opts] (split-with #(not= % '&) m-args)
+        m-opts (second m-opts)
+        m-opts-symbols (-> m-opts symbols-from-bindings vec)
+        m-opts (bindings-to-map m-opts)
 
-        [m-bindings m-start-body]
-        (if (-> m-start-body first vector?)
-          [(first m-start-body) (rest m-start-body)]
-          [[] m-start-body])
-
-        m-stop-body
-        (or (:stop m-body) ())
-
-        m-attrs (concat m-args (symbols-from-bindings m-bindings))
+        m-attrs (concat m-args
+                        m-opts-symbols
+                        (symbols-from-bindings m-bindings))
         m-attrs (symbols-to-map m-attrs)]
     `(mecha-def
-       (fn [m# ~@m-args]
+       (fn [m# ~@m-args & {:or ~m-opts
+                           :keys ~m-opts-symbols}]
          (let ~m-bindings
            ~@m-start-body
            (merge m# ~m-attrs)))

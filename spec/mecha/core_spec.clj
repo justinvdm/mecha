@@ -54,7 +54,19 @@
       (should-have-invoked :starter {:times 1
                                      :with [2 3]})
       (should= 2 (:foo m))
-      (should= 3 (:bar m)))))
+      (should= 3 (:bar m))))
+
+  (it "should support an option arguments"
+    (let [starter (stub :starter)
+          mdef (mecha [foo & [bar 5
+                              baz 4]]
+                      (:start (starter foo bar baz)))
+          m (mdef 2 :bar 3)]
+      (should-have-invoked :starter {:times 1
+                                     :with [2 3 4]})
+      (should= 2 (:foo m))
+      (should= 3 (:bar m))
+      (should= 4 (:baz m)))))
 
 
 (describe "defmecha"
