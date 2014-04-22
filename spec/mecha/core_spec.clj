@@ -56,7 +56,7 @@
       (should= 2 (:foo m))
       (should= 3 (:bar m))))
 
-  (it "should support an option arguments"
+  (it "should support option arguments"
     (let [starter (stub :starter)
           mdef (mecha [foo & [bar 5
                               baz 4]]
