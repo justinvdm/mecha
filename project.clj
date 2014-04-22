@@ -1,4 +1,4 @@
-(defproject mecha "0.1.1"
+(defproject mecha "0.2.0"
   :description "coordinate starting and stopping things in clojure"
   :url "https://github.com/justinvdm/mecha"
   :license {:name "MIT"}
