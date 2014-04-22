@@ -1,6 +1,11 @@
 (ns mecha.core-spec
-  (:require [speclj.core :refer :all]
+  (:require [clojure.repl :refer [doc]]
+            [speclj.core :refer :all]
             [mecha.core :refer :all]))
+
+
+(defmecha mecha-foo)
+(defmecha mecha-bar "is a bar")
 
 
 (describe "mecha"
@@ -46,3 +51,12 @@
       (m)
       (should-have-invoked :starter {:times 1
                                      :with [2]}))))
+
+
+(describe "defmecha"
+  (it "should define a mecha"
+    (should-be mecha? (mecha-foo)))
+
+  (it "should be documentable"
+    (should-contain "is a bar"
+                    (with-out-str (doc mecha-bar)))))

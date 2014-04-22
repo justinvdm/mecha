@@ -59,7 +59,13 @@
 (defmacro defmecha
   "Define a mecha capable of being started and stopped"
   [m-name & m-body]
-  `(def ~m-name (mecha ~@m-body)))
+  (let [[m-doc m-body]
+        (if (-> m-body first string?)
+          [(first m-body) (rest m-body)]
+          [nil m-body])]
+    (if (nil? m-doc)
+      `(def ~m-name (mecha ~@m-body))
+      `(def ~m-name ~m-doc (mecha ~@m-body)))))
 
 
 (defn mecha?
