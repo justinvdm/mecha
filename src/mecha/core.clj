@@ -84,9 +84,9 @@
   "Stops a mecha"
   [m]
   ((-> m ::stop) m)
-  (doseq [attr m]
-    (if (mecha? attr)
-      (stop m))))
+  (doseq [[k v] m]
+    (if (mecha? v)
+      (stop v))))
 
 
 (defn mecha-def [m-start m-stop]

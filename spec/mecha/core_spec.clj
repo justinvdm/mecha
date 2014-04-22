@@ -25,14 +25,14 @@
 
   (it "should start its own mecha when it is started"
     (let [starter (stub :starter)
-          m (mecha (:start [mecha (:start (starter))]))]
+          m (mecha (:start [sub-m ((mecha (:start (starter))))]))]
       (m)
       (should-have-invoked :starter {:times 1})))
 
   (it "should stop its own mecha when it is stopped"
     (let [stopper (stub :stopper)
           m (mecha (:start [foo 23
-                            mecha (:stop (stopper))]))]
+                            sub-m ((mecha (:stop (stopper))))]))]
       (stop (m))
       (should-have-invoked :stopper {:times 1})))
 
