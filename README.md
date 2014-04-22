@@ -7,8 +7,8 @@ coordinate starting and stopping things in clojure
   (:require [mecha.core :refer [defmecha stop]]))
 
 
-(defmecha foo [foo-name]
-  (:start [foo-name (str foo-name "-foo")]
+(defmecha foo [foo-name & [suffix "-foo"]]
+  (:start [foo-name (str foo-name suffix)]
           (println foo-name "starting"))
   (:stop (println foo-name "stopping")))
 
@@ -34,6 +34,7 @@ coordinate starting and stopping things in clojure
   ; sys-foo stopping
   ())
 ```
+
 
 ## install
 
