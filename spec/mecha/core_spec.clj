@@ -31,8 +31,8 @@
 
   (it "should stop its own mecha when it is stopped"
     (let [stopper (stub :stopper)
-          m (mecha (:start [foo 23
-                            sub-m ((mecha (:stop (stopper))))]))]
+          m (mecha (:start [sub-m
+                            ((mecha (:stop (stopper))))]))]
       (stop (m))
       (should-have-invoked :stopper {:times 1})))
 
@@ -45,28 +45,43 @@
 
   (it "should handle state as a `let` would"
     (let [starter (stub :starter)
+          stopper (stub :stopper)
           mdef (mecha (:start [foo 1
                                foo (inc foo)
 
                                {bar :bar} {:bar 3}]
-                              (starter foo bar)))
+                              (starter foo bar))
+                      (:stop (stopper foo bar)))
           m (mdef)]
       (should-have-invoked :starter {:times 1
                                      :with [2 3]})
-      (should= 2 (:foo m))
-      (should= 3 (:bar m))))
+      (stop m)
+      (should-have-invoked :stopper {:times 1
+                                     :with [2 3]})))
 
   (it "should support option arguments"
     (let [starter (stub :starter)
+          stopper (stub :stopper)
           mdef (mecha [foo & [bar 5
                               baz 4]]
-                      (:start (starter foo bar baz)))
+                      (:start (starter foo bar baz))
+                      (:stop (stopper foo bar baz)))
           m (mdef 2 :bar 3)]
       (should-have-invoked :starter {:times 1
                                      :with [2 3 4]})
-      (should= 2 (:foo m))
-      (should= 3 (:bar m))
-      (should= 4 (:baz m)))))
+      (stop m)
+      (should-have-invoked :stopper {:times 1
+                                     :with [2 3 4]})))
+
+
+  (it "should allow attributes to be returned by the start body"
+    (let [mdef (mecha (:start [foo 2
+                               bar 3]
+                              {:foo 4
+                               :bar 5}))
+          m (mdef)]
+      (should= 4 (:foo m))
+      (should= 5 (:bar m)))))
 
 
 (describe "defmecha"

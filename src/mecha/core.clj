@@ -49,19 +49,33 @@
         m-opts-symbols (-> m-opts symbols-from-bindings vec)
         m-opts (bindings-to-map m-opts)
 
-        m-attrs (concat m-args
+        m-scope (concat m-args
                         m-opts-symbols
                         (symbols-from-bindings m-bindings))
-        m-attrs (symbols-to-map m-attrs)]
-    `(mecha-def
-       (fn [m# ~@m-args & {:or ~m-opts
-                           :keys ~m-opts-symbols}]
-         (let ~m-bindings
-           ~@m-start-body
-           (merge m# ~m-attrs)))
-       (fn [m#]
-         (let [~(map-invert m-attrs) m#]
-           ~@m-stop-body
+        m-scope (symbols-to-map m-scope)]
+    `(let [m-start#
+           (fn [m# ~@m-args & {:or ~m-opts
+                               :keys ~m-opts-symbols}]
+             (let ~m-bindings
+               (let [result# (do ~@m-start-body)
+                     result# (if (map? result#)
+                               result#
+                               {})
+                     data# (assoc (::data m#) :scope ~m-scope)
+                     m# (assoc m# ::data data#)
+                     m# (merge m# (dissoc result# ::data))]
+                 m#)))
+
+           m-stop#
+           (fn [m#]
+             (let [~(map-invert m-scope) (-> m# ::data :scope)]
+               ~@m-stop-body
+               m#))]
+       (fn [& args#]
+         (let [m# (assoc (mecha.core.Mecha.) ::data {:scope {}
+                                                     :start m-start#
+                                                     :stop m-stop#})
+               m# (apply mecha.core/start m# args#)]
            m#)))))
 
 
@@ -86,22 +100,13 @@
 (defn start
   "Starts a mecha"
   [m & args]
-  (apply (-> m ::start) m args))
+  (apply (-> m ::data :start) m args))
 
 
 (defn stop
   "Stops a mecha"
   [m]
-  ((-> m ::stop) m)
-  (doseq [[k v] m]
+  ((-> m ::data :stop) m)
+  (doseq [[k v] (-> m ::data :scope)]
     (if (mecha? v)
       (stop v))))
-
-
-(defn mecha-def [m-start m-stop]
-  (fn [& args]
-    (let [m (assoc (mecha.core.Mecha.)
-                   ::start m-start
-                   ::stop m-stop)
-          m (apply mecha.core/start m args)]
-      m)))
