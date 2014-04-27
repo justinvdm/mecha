@@ -73,6 +73,18 @@
       (should-have-invoked :stopper {:times 1
                                      :with [2 3 4]})))
 
+  (it "should support variable args"
+    (let [starter (stub :starter)
+          stopper (stub :stopper)
+          mdef (mecha [foo & args]
+                      (:start (apply starter foo args))
+                      (:stop (apply stopper foo args)))
+          m (mdef 2 3 4)]
+      (should-have-invoked :starter {:times 1
+                                     :with [2 3 4]})
+      (stop m)
+      (should-have-invoked :stopper {:times 1
+                                     :with [2 3 4]})))
 
   (it "should allow attributes to be returned by the start body"
     (let [mdef (mecha (:start [foo 2

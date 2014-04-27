@@ -6,14 +6,14 @@
 (defrecord Mecha [])
 
 
-(defn symbols-from-bindings [bs]
+(defn- symbols-from-bindings [bs]
   (let [result (take-nth 2 bs)
         result (postwalk #(if (map? %) (keys %) %) result)
         result (flatten result)]
     result))
 
 
-(defn bindings-to-map [bs]
+(defn- bindings-to-map [bs]
   (let [lhs (take-nth 2 bs)
         rhs (take-nth 2 (rest bs))
         result (map vector lhs rhs)
@@ -21,11 +21,32 @@
     result))
 
 
-(defn symbols-to-map [symbols]
+(defn- symbols-to-map [symbols]
   (let [ks (map keyword symbols)
         result (map vector ks symbols)
         result (into {} result)]
     result))
+
+
+(defn- parse-vargs [vargs]
+  (cond
+    (nil? vargs)
+    {:symbols []
+     :form `{:or []
+             :keys []}}
+
+    (symbol? vargs)
+    {:symbols [vargs]
+     :form vargs}
+
+    (vector? vargs)
+    (let [symbols (-> vargs symbols-from-bindings vec)
+          opts (bindings-to-map vargs)]
+      {:symbols symbols
+       :form `{:or ~opts
+               :keys ~symbols}})
+
+    :else (throw (Error. "foo"))))
 
 
 (defmacro mecha
@@ -44,18 +65,17 @@
                                     [[] m-start-body])
         m-stop-body (or (:stop m-body) ())
 
-        [m-args m-opts] (split-with #(not= % '&) m-args)
-        m-opts (second m-opts)
-        m-opts-symbols (-> m-opts symbols-from-bindings vec)
-        m-opts (bindings-to-map m-opts)
+        [m-args m-vargs] (split-with #(not= % '&) m-args)
+        m-vargs (second m-vargs)
+        {m-vargs-symbols :symbols
+         m-vargs-form  :form} (parse-vargs m-vargs)
 
         m-scope (concat m-args
-                        m-opts-symbols
+                        m-vargs-symbols
                         (symbols-from-bindings m-bindings))
         m-scope (symbols-to-map m-scope)]
     `(let [m-start#
-           (fn [m# ~@m-args & {:or ~m-opts
-                               :keys ~m-opts-symbols}]
+           (fn [m# ~@m-args & ~m-vargs-form]
              (let ~m-bindings
                (let [result# (do ~@m-start-body)
                      result# (if (map? result#)
