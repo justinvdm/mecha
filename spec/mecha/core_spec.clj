@@ -157,10 +157,13 @@
 
     (it "should not try switch if the switcher is already on the given mecha"
       (let [starter (stub :starter)
-            switcher (switch {1 (mecha (:start (starter)))})]
+            stopper (stub :stopper)
+            switcher (switch {1 (mecha (:start (starter))
+                                       (:stop (stopper)))})]
         (start switcher 1)
         (start switcher 1)
-        (should-have-invoked :starter {:times 1}))))
+        (should-have-invoked :starter {:times 1})
+        (should-have-invoked :stopper {:times 0}))))
 
   (describe "defswitch"
     (it "should define a switch"

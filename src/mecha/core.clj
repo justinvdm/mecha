@@ -184,11 +184,12 @@
         switcher
         (fn [k & args]
           (let [mdef (get mdefs k)]
-            (if-not (nil? @current)
-              (stop @current))
-            (when-not (or (= k @current-k)
-                        (nil? mdef))
-              (reset! current (apply start mdef args))
+            (when-not (= k @current-k)
+              (if-not (nil? @current)
+                (stop @current))
+              (if-not (nil? mdef)
+                (reset! current (apply start mdef args))
+                (reset! current nil))
               (reset! current-k k))
             @current))
         switcher (with-meta switcher {:type ::MechaSwitch})]
