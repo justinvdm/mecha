@@ -55,6 +55,18 @@
   (= mecha.core.Mecha (type m)))
 
 
+(defn mechadef?
+  "returns true if mdef is a mecha def, false otherwise."
+  [mdef]
+  (= ::MechaDef (type mdef)))
+
+
+(defn switch?
+  "returns true if s is a mecha switch, false otherwise."
+  [s]
+  (= ::MechaSwitch (type s)))
+
+
 (defmulti start
   "multipurpose function for starting things"
   (fn [t & _] (type t)))
@@ -73,6 +85,11 @@
   (apply mdef args))
 
 
+(defmethod start ::MechaSwitch [mswitch k & args]
+  "invokes a mecha switch, possibly initialising it"
+  (apply mswitch k args))
+
+
 (defmulti stop
   "multipurpose function for stopping things"
   (fn [t & _] (type t)))
@@ -85,6 +102,11 @@
   "stops a mecha"
   ((-> m meta ::meta :stop) m)
   (doseq [[k v] (-> m meta ::meta :scope)] (stop v)))
+
+
+(defmethod stop ::MechaSwitch [mswitch]
+  "stops a mecha"
+  (mswitch nil))
 
 
 (defmacro mecha
@@ -139,8 +161,7 @@
                    m# (apply start m# args#)]
                m#))
 
-           mdef#
-           (with-meta mdef# {:type ::MechaDef})]
+           mdef# (with-meta mdef# {:type ::MechaDef})]
        mdef#)))
 
 
@@ -154,3 +175,28 @@
     (if (nil? m-doc)
       `(def ~m-name (mecha ~@m-body))
       `(def ~m-name ~m-doc (mecha ~@m-body)))))
+
+
+(defn switch [mdefs]
+  "make a mecha switch"
+  (let [current (atom nil)
+        current-k (atom nil)
+        switcher
+        (fn [k & args]
+          (let [mdef (get mdefs k)]
+            (if-not (nil? @current)
+              (stop @current))
+            (if-not (nil? mdef)
+              (reset! current (apply start mdef args))
+              (reset! current-k k))
+            @current))
+        switcher (with-meta switcher {:type ::MechaSwitch})]
+    switcher))
+
+
+(defmacro defswitch
+  "define a mecha switch"
+  ([switch-name mdefs]
+   `(def ~switch-name (switch ~mdefs)))
+  ([switch-name switch-doc mdefs]
+   `(def ~switch-name ~switch-doc (switch ~mdefs))))
