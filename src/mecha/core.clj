@@ -55,6 +55,22 @@
   (= mecha.core.Mecha (type m)))
 
 
+(defn mechas?
+  "returns true if coll contains mecha, false otherwise."
+  [coll]
+  (cond
+    (empty? coll)
+    false
+
+    (map? coll)
+    (every? (fn [e] (-> e val mecha?)) coll)
+
+    (coll? coll)
+    (every? mecha? coll)
+
+    :else false))
+
+
 (defn mechadef?
   "returns true if mdef is a mecha def, false otherwise."
   [mdef]
@@ -80,6 +96,20 @@
   (apply (-> m meta ::meta :start) m args))
 
 
+(defmethod start clojure.lang.Seqable [coll & args]
+  "starts a sequence of mecha"
+  (if (mechas? coll)
+    (seq (for [m coll] (apply start m args)))
+    coll))
+
+
+(defmethod start clojure.lang.PersistentArrayMap [coll & args]
+  "starts a map of mecha"
+  (if (mechas? coll)
+    (into {} (for [[k m] coll] [k (apply start m args)]))
+    coll))
+
+
 (defmethod start ::MechaDef [mdef & args]
   "starts a new mecha using the given mecha def"
   (apply mdef args))
@@ -100,8 +130,23 @@
 
 (defmethod stop mecha.core.Mecha [m]
   "stops a mecha"
-  ((-> m meta ::meta :stop) m)
-  (doseq [[k v] (-> m meta ::meta :scope)] (stop v)))
+  (let [m ((-> m meta ::meta :stop) m)]
+    (doseq [[k v] (-> m meta ::meta :scope)] (stop v))
+    m))
+
+
+(defmethod stop clojure.lang.Seqable [coll]
+  "stops a sequence of mecha"
+  (if (mechas? coll)
+    (seq (for [m coll] (stop m)))
+    coll))
+
+
+(defmethod stop clojure.lang.PersistentArrayMap [coll]
+  "stops a map of mecha"
+  (if (mechas? coll)
+    (into {} (for [[k m] coll] [k (stop m)]))
+    coll))
 
 
 (defmethod stop ::MechaSwitch [mswitch]

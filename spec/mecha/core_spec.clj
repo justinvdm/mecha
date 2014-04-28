@@ -106,6 +106,65 @@
         (should= 4 (:foo m))
         (should= 5 (:bar m)))))
 
+  (describe "mecha maps"
+    (it "should be startable"
+      (let [starter1 (stub :starter1)
+            starter2 (stub :starter2)
+            mdef1 (mecha [arg] (:start (starter1 arg)))
+            mdef2 (mecha [arg] (:start (starter2 arg)))
+            coll {1 (mdef1 "foo")
+                  2 (mdef2 "foo")}
+            coll (start coll "bar")]
+
+        (should= [[1 true]
+                  [2 true]] (for [[k v] coll] [k (mecha? v)]))
+
+        (should-have-invoked :starter1 {:times 1
+                                        :with ["bar"]})
+        (should-have-invoked :starter2 {:times 1
+                                        :with ["bar"]})))
+
+    (it "should be stoppable"
+      (let [stopper1 (stub :stopper1)
+            stopper2 (stub :stopper2)
+            coll {1 ((mecha (:stop (stopper1))))
+                  2 ((mecha (:stop (stopper2))))}
+            coll (stop coll)]
+
+        (should= [[1 true]
+                  [2 true]] (for [[k v] coll] [k (mecha? v)]))
+
+        (should-have-invoked :stopper1 {:times 1})
+        (should-have-invoked :stopper2 {:times 1}))))
+
+  (describe "mecha sequences"
+    (it "should be startable"
+      (let [starter1 (stub :starter1)
+            starter2 (stub :starter2)
+            mdef1 (mecha [arg] (:start (starter1 arg)))
+            mdef2 (mecha [arg] (:start (starter2 arg)))
+            coll [(mdef1 "foo")
+                  (mdef2 "foo")]
+
+            coll (start coll "bar")]
+
+        (should (every? mecha? coll))
+        (should-have-invoked :starter1 {:times 1
+                                        :with ["bar"]})
+        (should-have-invoked :starter2 {:times 1
+                                        :with ["bar"]})))
+
+    (it "should be stoppable"
+      (let [stopper1 (stub :stopper1)
+            stopper2 (stub :stopper2)
+            coll [((mecha (:stop (stopper1))))
+                  ((mecha (:stop (stopper2))))]
+            coll (stop coll)]
+
+        (should (every? mecha? coll))
+        (should-have-invoked :stopper1 {:times 1})
+        (should-have-invoked :stopper2 {:times 1}))))
+
   (describe "defmecha"
     (it "should define a mecha"
       (should-be mechadef? mecha-foo)
