@@ -11,7 +11,13 @@
 (describe "mecha"
   (with-stubs)
 
-  (it "should be startable"
+  (it "should be startable using the mecha def"
+    (let [starter (stub :starter)
+          m (mecha (:start (starter)))]
+      (start m)
+      (should-have-invoked :starter {:times 1})))
+
+  (it "should be startable using the mecha def as a function"
     (let [starter (stub :starter)
           m (mecha (:start (starter)))]
       (m)
@@ -36,7 +42,7 @@
       (stop (m))
       (should-have-invoked :stopper {:times 1})))
 
-  (it "should not support args"
+  (it "should support args"
     (let [starter (stub :starter)
           m (mecha [a b] (:start (starter a b)))]
       (m 1 2)

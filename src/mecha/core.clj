@@ -49,8 +49,46 @@
     :else (throw (Error. "foo"))))
 
 
+(defn mecha?
+  "returns true if m is a mecha, false otherwise."
+  [m]
+  (= mecha.core.Mecha (type m)))
+
+
+(defmulti start
+  "multipurpose function for starting things"
+  (fn [t & _] (type t)))
+
+
+(defmethod start :default [& _])
+
+
+(defmethod start mecha.core.Mecha [m & args]
+  "starts a mecha"
+  (apply (-> m meta ::meta :start) m args))
+
+
+(defmethod start ::MechaDef [mdef & args]
+  "starts a new mecha using the given mecha def"
+  (apply mdef args))
+
+
+(defmulti stop
+  "multipurpose function for stopping things"
+  (fn [t & _] (type t)))
+
+
+(defmethod stop :default [& _])
+
+
+(defmethod stop mecha.core.Mecha [m]
+  "stops a mecha"
+  ((-> m meta ::meta :stop) m)
+  (doseq [[k v] (-> m meta ::meta :scope)] (stop v)))
+
+
 (defmacro mecha
-  "Make a mecha capable of being started and stopped"
+  "make a mecha capable of being started and stopped"
   [& m-body]
   (let [[m-args m-body] (if (-> m-body first vector?)
                           [(first m-body) (rest m-body)]
@@ -91,17 +129,23 @@
            (fn [m#]
              (let [~(map-invert m-scope) (-> m# meta ::meta :scope)]
                ~@m-stop-body
-               m#))]
-       (fn [& args#]
-         (let [m# (with-meta (mecha.core.Mecha.) {::meta {:scope {}
-                                                          :start m-start#
-                                                          :stop m-stop#}})
-               m# (apply mecha.core/start m# args#)]
-           m#)))))
+               m#))
+
+           mdef#
+           (fn [& args#]
+             (let [m# (with-meta (mecha.core.Mecha.) {::meta {:scope {}
+                                                              :start m-start#
+                                                              :stop m-stop#}})
+                   m# (apply start m# args#)]
+               m#))
+
+           mdef#
+           (with-meta mdef# {:type ::MechaDef})]
+       mdef#)))
 
 
 (defmacro defmecha
-  "Define a mecha capable of being started and stopped"
+  "define a mecha capable of being started and stopped"
   [m-name & m-body]
   (let [[m-doc m-body]
         (if (-> m-body first string?)
@@ -110,24 +154,3 @@
     (if (nil? m-doc)
       `(def ~m-name (mecha ~@m-body))
       `(def ~m-name ~m-doc (mecha ~@m-body)))))
-
-
-(defn mecha?
-  "Returns true if m is a mecha, false otherwise."
-  [m]
-  (= mecha.core.Mecha (type m)))
-
-
-(defn start
-  "Starts a mecha"
-  [m & args]
-  (apply (-> m meta ::meta :start) m args))
-
-
-(defn stop
-  "Stops a mecha"
-  [m]
-  ((-> m meta ::meta :stop) m)
-  (doseq [[k v] (-> m meta ::meta :scope)]
-    (if (mecha? v)
-      (stop v))))
