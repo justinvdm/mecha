@@ -81,20 +81,21 @@
                      result# (if (map? result#)
                                result#
                                {})
-                     data# (assoc (::data m#) :scope ~m-scope)
-                     m# (assoc m# ::data data#)
-                     m# (merge m# (dissoc result# ::data))]
+                     metadata# (-> m# meta ::meta)
+                     metadata# (assoc metadata# :scope ~m-scope)
+                     m# (merge m# result#)
+                     m# (with-meta m# (assoc (meta m#) ::meta metadata#))]
                  m#)))
 
            m-stop#
            (fn [m#]
-             (let [~(map-invert m-scope) (-> m# ::data :scope)]
+             (let [~(map-invert m-scope) (-> m# meta ::meta :scope)]
                ~@m-stop-body
                m#))]
        (fn [& args#]
-         (let [m# (assoc (mecha.core.Mecha.) ::data {:scope {}
-                                                     :start m-start#
-                                                     :stop m-stop#})
+         (let [m# (with-meta (mecha.core.Mecha.) {::meta {:scope {}
+                                                          :start m-start#
+                                                          :stop m-stop#}})
                m# (apply mecha.core/start m# args#)]
            m#)))))
 
@@ -120,13 +121,13 @@
 (defn start
   "Starts a mecha"
   [m & args]
-  (apply (-> m ::data :start) m args))
+  (apply (-> m meta ::meta :start) m args))
 
 
 (defn stop
   "Stops a mecha"
   [m]
-  ((-> m ::data :stop) m)
-  (doseq [[k v] (-> m ::data :scope)]
+  ((-> m meta ::meta :stop) m)
+  (doseq [[k v] (-> m meta ::meta :scope)]
     (if (mecha? v)
       (stop v))))
