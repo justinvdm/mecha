@@ -186,7 +186,8 @@
           (let [mdef (get mdefs k)]
             (if-not (nil? @current)
               (stop @current))
-            (if-not (nil? mdef)
+            (when-not (or (= k @current-k)
+                        (nil? mdef))
               (reset! current (apply start mdef args))
               (reset! current-k k))
             @current))
