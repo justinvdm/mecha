@@ -43,5 +43,5 @@ add it to your project's `project.clj`
 ```clojure
 {...
  {:dependencies [...
-                 [mecha "0.2.0"]]}}
+                 [mecha "0.4.0"]]}}
 ```
