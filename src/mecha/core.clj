@@ -93,7 +93,7 @@
 
 (defmethod start mecha.core.Mecha [m & args]
   "starts a mecha"
-  (apply (-> m meta ::meta :start) m args))
+  (apply (-> m meta ::proto :start) m args))
 
 
 (defmethod start clojure.lang.Seqable [coll & args]
@@ -130,8 +130,8 @@
 
 (defmethod stop mecha.core.Mecha [m]
   "stops a mecha"
-  (let [m ((-> m meta ::meta :stop) m)]
-    (doseq [[k v] (-> m meta ::meta :scope)] (stop v))
+  (let [m ((-> m meta ::proto :stop) m)]
+    (doseq [[k v] (-> m meta ::proto :scope)] (stop v))
     m))
 
 
@@ -186,21 +186,21 @@
                      result# (if (map? result#)
                                result#
                                {})
-                     metadata# (-> m# meta ::meta)
+                     metadata# (-> m# meta ::proto)
                      metadata# (assoc metadata# :scope ~m-scope)
                      m# (merge m# result#)
-                     m# (with-meta m# (assoc (meta m#) ::meta metadata#))]
+                     m# (with-meta m# (assoc (meta m#) ::proto metadata#))]
                  m#)))
 
            m-stop#
            (fn [m#]
-             (let [~(map-invert m-scope) (-> m# meta ::meta :scope)]
+             (let [~(map-invert m-scope) (-> m# meta ::proto :scope)]
                ~@m-stop-body
                m#))
 
            mdef#
            (fn [& args#]
-             (let [m# (with-meta (mecha.core.Mecha.) {::meta {:scope {}
+             (let [m# (with-meta (mecha.core.Mecha.) {::proto {:scope {}
                                                               :start m-start#
                                                               :stop m-stop#}})
                    m# (apply start m# args#)]
