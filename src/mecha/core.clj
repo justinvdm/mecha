@@ -131,7 +131,9 @@
 (defmethod stop mecha.core.Mecha [m]
   "stops a mecha"
   (let [m ((-> m meta ::proto :stop) m)]
-    (doseq [[k v] (-> m meta ::proto :scope)] (stop v))
+    (doseq [[k v] (-> m meta ::proto :scope)]
+      (if-not (.startsWith (name k) "!")
+        (stop v)))
     m))
 
 

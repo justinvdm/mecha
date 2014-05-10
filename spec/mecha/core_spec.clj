@@ -47,6 +47,15 @@
         (stop (m))
         (should-have-invoked :stopper {:times 1})))
 
+    (it "should allow its own mecha to not get stopped when it is stopped"
+      (let [stopper1 (stub :stopper1)
+            stopper2 (stub :stopper2)
+            m (mecha (:start [!sub-m1 ((mecha (:stop (stopper1))))
+                              sub-m2 ((mecha (:stop (stopper2))))]))]
+        (stop (m))
+        (should-have-invoked :stopper1 {:times 0})
+        (should-have-invoked :stopper2 {:times 1})))
+
     (it "should support args"
       (let [starter (stub :starter)
             m (mecha [a b] (:start (starter a b)))]
